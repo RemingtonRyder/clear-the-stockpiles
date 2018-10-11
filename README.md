@@ -3,9 +3,9 @@ I have a need to get that leather away from the place where deer caracsses will 
 
 Otherwise the entire production chain:
 
- hunters bringing in fresh kills
- butchers butchering the animals for meat
- cooks cooking the meat into meals
+-hunters bringing in fresh kills
+-butchers butchering the animals for meat
+-cooks cooking the meat into meals
  
 stops working.
 
