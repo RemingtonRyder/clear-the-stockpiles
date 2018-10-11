@@ -1,0 +1,4 @@
+C:\Users\tokra\Documents\Projects\ClearTheStockpiles\bin\Beta 19\ClearTheStockpiles.dll
+C:\Users\tokra\Documents\Projects\ClearTheStockpiles\obj\Beta 19\ClearTheStockpiles.csprojAssemblyReference.cache
+C:\Users\tokra\Documents\Projects\ClearTheStockpiles\obj\Beta 19\ClearTheStockpiles.csproj.CoreCompileInputs.cache
+C:\Users\tokra\Documents\Projects\ClearTheStockpiles\obj\Beta 19\ClearTheStockpiles.dll
