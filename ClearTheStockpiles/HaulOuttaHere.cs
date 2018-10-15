@@ -141,8 +141,11 @@ namespace ClearTheStockpiles
 			{
 				for (int i = 0; i < 8; i++)
 				{
-					IntVec3 c2 = c + GenAdj.AdjacentCells[i];
-					if (worker.Map.designationManager.DesignationAt(c2, DesignationDefOf.Mine) != null)
+					IntVec3 adjCell = c + GenAdj.AdjacentCells[i];
+
+                    if (!adjCell.InBounds(worker.Map)) continue;
+
+					if (worker.Map.designationManager.DesignationAt(adjCell, DesignationDefOf.Mine) != null)
 					{
 						return false;
 					}
@@ -156,7 +159,10 @@ namespace ClearTheStockpiles
 			{
                 
 				IntVec3 adjCell = c + crossGrid[a];
-				Building restrictedBuildingAdj = adjCell.GetEdifice(worker.Map);
+
+                if (!adjCell.InBounds(worker.Map)) continue;
+
+                Building restrictedBuildingAdj = adjCell.GetEdifice(worker.Map);
 				if (restrictedBuildingAdj != null)
 				{
                     if (restrictedBuildingAdj is Building_Door)
