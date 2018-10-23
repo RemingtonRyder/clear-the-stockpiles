@@ -29,7 +29,7 @@ namespace ClearTheStockpiles
             string numInputBuffer1 = settings.radiusToSearch.ToString();
             //string numInputBuffer2 = settings.numMaximumRoll.ToString();
             const string LabelRadiusSearchStockpiles = "CTS_LookRadiusLabel";
-
+            const string LabelDebug = "CTS_Debug";
 
             Listing_Standard listing_Standard = new Listing_Standard()
             {
@@ -44,7 +44,9 @@ namespace ClearTheStockpiles
             listing_Standard.TextFieldNumeric(ref settings.radiusToSearch, ref numInputBuffer1, 1, 25);
 
 
-            //listing_Standard.Gap(12f);
+            listing_Standard.Gap(12f);
+
+            listing_Standard.CheckboxLabeled(LabelDebug.Translate(), ref settings.debug);
 
             listing_Standard.End();
         }
@@ -53,16 +55,13 @@ namespace ClearTheStockpiles
         {
             public int radiusToSearch = 18;
 
-            //public int numMinimumRoll = 1;
-
-            //public int numMaximumRoll = 20;
+            public bool debug = false;
 
             public override void ExposeData()
             {
                 Scribe_Values.Look(ref radiusToSearch, "val_RadiusToSearch", 18, true);
+                Scribe_Values.Look(ref debug, "mode_debug", false, true);
 
-                //Scribe_Values.Look(ref numMinimumRoll, "val_MinimumRoll", 1, true);
-                //Scribe_Values.Look(ref numMaximumRoll, "val_MaximumRoll", 20, true);
             }
 
 

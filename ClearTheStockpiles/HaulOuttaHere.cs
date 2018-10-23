@@ -43,6 +43,7 @@ namespace ClearTheStockpiles
 		{
             if (!CanHaulOuttaHere(p, t, out IntVec3 c))
             {
+                if (CTS_Loader.settings.debug) JobFailReason.Is("Can't clear: No place to clear to.");
                 return null;
             }
 
@@ -62,6 +63,8 @@ namespace ClearTheStockpiles
 		private static bool TryFindSpotToPlaceHaulableCloseTo(Thing haulable, Pawn worker, IntVec3 center,
 		                                                      out IntVec3 spot)
 		{
+            List<string> debugMessages = new List<string>();
+
 			Region region = center.GetRegion(worker.Map);
 			if (region == null)
 			{
@@ -72,22 +75,62 @@ namespace ClearTheStockpiles
 			IntVec3 foundCell = IntVec3.Invalid;
 			RegionTraverser.BreadthFirstTraverse(region, (Region from, Region r) => r.Allows(traverseParms, false),
 			                                     delegate (Region r)
-			{
-				candidates.Clear();
-				candidates.AddRange(r.Cells);
-				candidates.Sort((IntVec3 a, IntVec3 b) => a.DistanceToSquared(center).CompareTo(b.DistanceToSquared(center)));
-				IntVec3 intVec;
-				for (int i = 0; i < candidates.Count; i++)
-				{
-					intVec = candidates[i];
-					if (HaulablePlaceValidator(haulable, worker, intVec))
-					{
-						foundCell = intVec;
-						return true;
-					}
-				}
-				return false;
+            {
+                candidates.Clear();
+                candidates.AddRange(r.Cells);
+
+                // This function helps to identify cells which are part of the haulable's current stockpile
+                // (which it is not supposed to be in.
+                bool currentStockpile(IntVec3 slot) =>
+                  worker.Map.haulDestinationManager.SlotGroupAt(haulable.Position).CellsList.Contains(slot);
+
+                // We remove cells which we could never haul this thing to.
+                candidates.RemoveAll(currentStockpile);
+
+                candidates.Sort((IntVec3 a, IntVec3 b) => a.DistanceToSquared(center).CompareTo(b.DistanceToSquared(center)));
+                IntVec3 intVec;
+                for (int i = 0; i < candidates.Count; i++)
+                {
+                    intVec = candidates[i];
+                    if (HaulablePlaceValidator(haulable, worker, intVec, out string debugMsg))
+                    {
+
+                        foundCell = intVec;
+
+                        if (CTS_Loader.settings.debug)
+                        {
+                            debugMessages.Add(debugMsg);
+                        }
+
+                        //Debugging output.
+                        if (debugMessages.Count != 0)
+                        {
+                            foreach (string s in debugMessages)
+                            {
+                                Log.Message(s);
+                            }
+                        }
+                        return true;
+                    }
+                    else if (CTS_Loader.settings.debug)
+                    {
+                        debugMessages.Add(debugMsg);
+                    }
+
+
+                }
+
+                //Debugging output.
+                if (debugMessages.Count != 0)
+                {
+                    foreach (string s in debugMessages)
+                    {
+                        Log.Message(s);
+                    }
+                }
+                return false;
 			}, cellsToSearch);
+
 			if (foundCell.IsValid)
 			{
 				spot = foundCell;
@@ -97,14 +140,16 @@ namespace ClearTheStockpiles
 			return false;
 		}
 
-		private static bool HaulablePlaceValidator(Thing haulable, Pawn worker, IntVec3 c)
+		private static bool HaulablePlaceValidator(Thing haulable, Pawn worker, IntVec3 c, out string debugText)
 		{
 			if (!worker.CanReserveAndReach(c, PathEndMode.OnCell, worker.NormalMaxDanger()))
 			{
+                debugText = "Could not reserve or reach";
 				return false;
 			}
 			if (GenPlace.HaulPlaceBlockerIn(haulable, c, worker.Map, true) != null)
 			{
+                debugText = "Place was blocked";
 				return false;
 			}
 			var thisIsAPile = c.GetSlotGroup(worker.Map);
@@ -113,20 +158,24 @@ namespace ClearTheStockpiles
 			{
 				if (!thisIsAPile.Settings.AllowedToAccept(haulable))
 				{
+                    debugText = "Stockpile does not accept";
 					return false;
 				}
 			}
 
 			if (!c.Standable(worker.Map))
 			{
+                debugText = "Cell not standable";
 				return false;
 			}
 			if (c == haulable.Position && haulable.Spawned)
 			{
+                debugText = "Current position of thing to be hauled";
 				return false;
 			}
             if (c.ContainsStaticFire(worker.Map))
             {
+                debugText = "Cell has fire";
                 return false;
             }
             if (haulable != null && haulable.def.BlockPlanting)
@@ -134,6 +183,7 @@ namespace ClearTheStockpiles
 				Zone zone = worker.Map.zoneManager.ZoneAt(c);
 				if (zone is Zone_Growing)
 				{
+                    debugText = "Growing zone here";
 					return false;
 				}
 			}
@@ -147,6 +197,7 @@ namespace ClearTheStockpiles
 
 					if (worker.Map.designationManager.DesignationAt(adjCell, DesignationDefOf.Mine) != null)
 					{
+                        debugText = "Mining designated nearby";
 						return false;
 					}
 				}
@@ -186,27 +237,37 @@ namespace ClearTheStockpiles
                     }
 
                 }
+                else
+                {
+                    validPositionExists = true;
+                }
 
 			}
 
-            if (!validPositionExists) return false;
+            if (!validPositionExists)
+            {
+                debugText = "No valid position could be found.";
+                return false;
+            }
 
 			Building edifice = c.GetEdifice(worker.Map);
 			if (edifice != null)
 			{
                 if (edifice is Building_Trap)
                 {
+                    debugText = "It's a trap.";
                     return false;
                 }
 
                 if (edifice is Building_WorkTable)
                 {
+                    debugText = "Worktable here.";
                     return false;
                 }
 
             }
 
-
+            debugText = "OK";
 			return true;
 		}
 
